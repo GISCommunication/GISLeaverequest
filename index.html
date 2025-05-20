@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GIS Leave Request Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
+    button { margin-top: 20px; padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-size: 16px; }
+    button:hover { background: #1a252f; }
+    .logo { display: block; margin: 0 auto 20px auto; max-width: 120px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <img src="https://raw.githubusercontent.com/GISCommunication/GISLeaverequest/main/GIS%20Logo.webp" alt="GIS Logo" class="logo">
+  <h2>GIS Leave Request Form</h2>
+
+  <label for="email">Parent Email</label>
+  <input type="email" id="email" required>
+  <button onclick="validateEmail()">Validate Email</button>
+
+  <div id="studentInfo" class="hidden">
+    <label for="studentName">Student Name</label>
+    <select id="studentName" onchange="autofillDetails()"></select>
+
+    <label for="studentId">Student ID</label>
+    <input type="text" id="studentId" readonly>
+
+    <label for="grade">Grade</label>
+    <input type="text" id="grade" readonly>
+
+    <label for="section">Section</label>
+    <input type="text" id="section" readonly>
+
+    <label for="leaveType">Type of Leave</label>
+    <select id="leaveType" required>
+      <option value="">Select</option>
+      <option>Sick Leave</option>
+      <option>Planned Leave</option>
+      <option>Unplanned Leave</option>
+      <option>Early Dismissal</option>
+    </select>
+
+    <label for="fromDate">From Date</label>
+    <input type="date" id="fromDate" required>
+
+    <label for="toDate">To Date</label>
+    <input type="date" id="toDate" required>
+
+    <label for="reason">Reason</label>
+    <textarea id="reason" rows="4" required></textarea>
+
+    <button onclick="submitForm()">Submit</button>
+  </div>
+</div>
+
+<script>
+  const API_URL = 'https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec';
+
+  function validateEmail() {
+    const email = document.getElementById('email').value.trim();
+    if (!email) return alert("Please enter your email.");
+
+    fetch(`${API_URL}?email=${encodeURIComponent(email)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.students || data.students.length === 0) {
+          alert("No students found for this email.");
+          return;
+        }
+
+        const dropdown = document.getElementById('studentName');
+        dropdown.innerHTML = '<option value="">Select Student</option>';
+        data.students.forEach(stu => {
+          const option = document.createElement('option');
+          option.value = JSON.stringify(stu);
+          option.textContent = stu.name;
+          dropdown.appendChild(option);
+        });
+
+        document.getElementById('studentInfo').classList.remove('hidden');
+      })
+      .catch(err => alert("Error validating email."));
+  }
+
+  function autofillDetails() {
+    const selected = document.getElementById('studentName').value;
+    if (!selected) return;
+    const student = JSON.parse(selected);
+    document.getElementById('grade').value = student.grade;
+    document.getElementById('section').value = student.section;
+    document.getElementById('studentId').value = student.studentId;
+  }
+
+  function submitForm() {
+    const data = {
+      email: document.getElementById('email').value.trim(),
+      studentName: JSON.parse(document.getElementById('studentName').value).name,
+      studentId: document.getElementById('studentId').value,
+      grade: document.getElementById('grade').value,
+      section: document.getElementById('section').value,
+      leaveType: document.getElementById('leaveType').value,
+      fromDate: document.getElementById('fromDate').value,
+      toDate: document.getElementById('toDate').value,
+      reason: document.getElementById('reason').value
+    };
+
+    if (!data.email || !data.studentName || !data.leaveType || !data.fromDate || !data.toDate || !data.reason) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(() => {
+      alert("✅ Your leave request has been submitted. You will be notified via email.");
+      document.getElementById('studentInfo').classList.add('hidden');
+      document.getElementById('email').value = '';
+    })
+    .catch(() => alert("❌ Failed to submit request. Please try again later."));
+  }
+</script>
+</body>
+</html>
