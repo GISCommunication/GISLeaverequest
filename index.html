@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GIS Leave Request Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
+    button { margin-top: 20px; padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-size: 16px; }
+    button:hover { background: #1a252f; }
+    .hidden { display: none; }
+    iframe { display: none; height: 0; border: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>GEMS International School, Al Khail</h2>
+  <h2>GIS Leave Request Form</h2>
+
+  <label for="email">Parent Email</label>
+  <input type="email" id="email" required>
+  <button onclick="validateEmail()">Validate Email</button>
+
+  <form id="leaveForm" target="invisibleFrame" action="https://docs.google.com/forms/d/e/1FAIpQLSdcnWetkfAFEOe_SmhsHyT7fOuW5tPuG_Bjzbv1FnM-l5m8_g/formResponse" method="POST">
+    <div id="studentInfo" class="hidden">
+
+      <label for="studentName">Student Name</label>
+      <select id="studentName" name="entry.1112781725" onchange="autofillDetails()" required></select>
+
+      <label for="studentId">Student ID</label>
+      <input type="text" id="studentId" readonly name="entry.102330296" required>
+
+      <label for="grade">Grade</label>
+      <input type="text" id="grade" readonly name="entry.468445493" required>
+
+      <label for="section">Section</label>
+      <input type="text" id="section" readonly name="entry.1428888703" required>
+
+      <label for="leaveType">Type of Leave</label>
+      <select id="leaveType" required name="entry.722608314">
+        <option value="">Select</option>
+        <option>Sick Leave</option>
+        <option>Planned Leave</option>
+        <option>Unplanned Leave</option>
+        <option>Early Dismissal</option>
+      </select>
+
+      <label for="fromDate">From Date</label>
+      <input type="date" id="fromDate" required name="entry.1213409688">
+
+      <label for="toDate">To Date</label>
+      <input type="date" id="toDate" required name="entry.88265946">
+
+      <label for="reason">Reason</label>
+      <textarea id="reason" rows="4" required name="entry.2006563853"></textarea>
+
+      <input type="hidden" id="hiddenEmailField" name="entry.383074926" required>
+
+      <button type="button" onclick="handleSubmit()">Submit</button>
+    </div>
+  </form>
+  <iframe name="invisibleFrame" id="invisibleFrame"></iframe>
+</div>
+
+<script>
+  const API_URL = 'https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec';
+
+  function validateEmail() {
+    const email = document.getElementById('email').value.trim();
+    if (!email) return alert("Please enter your email.");
+
+    fetch(`${API_URL}?email=${encodeURIComponent(email)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.students || data.students.length === 0) {
+          alert("No students found for this email.");
+          return;
+        }
+
+        const dropdown = document.getElementById('studentName');
+        dropdown.innerHTML = '<option value="">Select Student</option>';
+        data.students.forEach(stu => {
+          const option = document.createElement('option');
+          option.value = JSON.stringify(stu);
+          option.textContent = stu.name;
+          dropdown.appendChild(option);
+        });
+
+        // Set email in hidden field
+        document.getElementById('hiddenEmailField').value = email;
+
+        document.getElementById('studentInfo').classList.remove('hidden');
+      })
+      .catch(err => alert("Error validating email."));
+  }
+
+  function autofillDetails() {
+    const selected = document.getElementById('studentName').value;
+    if (!selected) return;
+    const student = JSON.parse(selected);
+    document.getElementById('grade').value = student.grade;
+    document.getElementById('section').value = student.section;
+    document.getElementById('studentId').value = student.studentId;
+  }
+
+  function handleSubmit() {
+    const requiredFields = ['studentName', 'studentId', 'grade', 'section', 'leaveType', 'fromDate', 'toDate', 'reason', 'hiddenEmailField'];
+    for (let id of requiredFields) {
+      if (!document.getElementById(id).value) {
+        alert('Please fill in all fields before submitting.');
+        return;
+      }
+    }
+
+    alert("✅ Your leave request has been submitted. You will be notified via email.");
+    document.getElementById('studentInfo').classList.add('hidden');
+    document.getElementById('email').value = '';
+    document.getElementById('leaveForm').submit();
+  }
+</script>
+</body>
+</html>
