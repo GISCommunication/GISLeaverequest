@@ -14,6 +14,7 @@
     button:hover { background: #1a252f; }
     .hidden { display: none; }
     iframe { display: none; height: 0; border: none; }
+    #loadingMessage { text-align: center; margin-top: 10px; color: #555; font-style: italic; }
   </style>
 </head>
 <body>
@@ -24,6 +25,7 @@
   <label for="email">Parent/Guardian Email registered with GIS</label>
   <input type="email" id="email" required>
   <button onclick="validateEmail()">Validate Email</button>
+  <div id="loadingMessage"></div>
 
   <form id="leaveForm" target="invisibleFrame" action="https://docs.google.com/forms/d/e/1FAIpQLSdcnWetkfAFEOe_SmhsHyT7fOuW5tPuG_Bjzbv1FnM-l5m8_g/formResponse" method="POST">
     <div id="studentInfo" class="hidden">
@@ -71,11 +73,21 @@
 
   function validateEmail() {
     const email = document.getElementById('email').value.trim();
-    if (!email) return alert("Please enter your email.");
+    const messageDiv = document.getElementById('loadingMessage');
+
+    if (!email) {
+      alert("Please enter your email.");
+      return;
+    }
+
+    // Show polite loading message
+    messageDiv.textContent = "🔄 Please wait whilst we validate the email against our records...";
 
     fetch(`${API_URL}?email=${encodeURIComponent(email)}`)
       .then(res => res.json())
       .then(data => {
+        messageDiv.textContent = ""; // Clear loading message
+
         if (!data.students || data.students.length === 0) {
           alert("No students found for this email.");
           return;
@@ -90,12 +102,13 @@
           dropdown.appendChild(option);
         });
 
-        // Set email in hidden field
         document.getElementById('hiddenEmailField').value = email;
-
         document.getElementById('studentInfo').classList.remove('hidden');
       })
-      .catch(err => alert("Error validating email."));
+      .catch(err => {
+        messageDiv.textContent = "";
+        alert("Error validating email.");
+      });
   }
 
   function autofillDetails() {
