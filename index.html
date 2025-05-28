@@ -50,6 +50,7 @@
         <option>Early Dismissal</option>
       </select>
 
+      <!-- Dismissal Plan -->
       <div id="dismissalOptionContainer" style="display: none;">
         <label for="dismissalOption">Early Dismissal Plan</label>
         <select id="dismissalOption" name="entry.1010113884">
@@ -78,28 +79,25 @@
 
 <script>
   const API_URL = 'https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec';
+  const seniorGrades = ['Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
+  const juniorGrades = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
 
   function validateEmail() {
     const email = document.getElementById('email').value.trim();
     const messageDiv = document.getElementById('loadingMessage');
-
     if (!email) {
       alert("Please enter your email.");
       return;
     }
-
     messageDiv.textContent = "🔄 Please wait whilst we validate the email against our records...";
-
     fetch(`${API_URL}?email=${encodeURIComponent(email)}`)
       .then(res => res.json())
       .then(data => {
         messageDiv.textContent = "";
-
         if (!data.students || data.students.length === 0) {
           alert("No students found for this email.");
           return;
         }
-
         const dropdown = document.getElementById('studentName');
         dropdown.innerHTML = '<option value="">Select Student</option>';
         data.students.forEach(stu => {
@@ -108,7 +106,6 @@
           option.textContent = stu.name;
           dropdown.appendChild(option);
         });
-
         document.getElementById('hiddenEmailField').value = email;
         document.getElementById('studentInfo').style.display = 'block';
       })
@@ -134,34 +131,18 @@
     const dismissalContainer = document.getElementById('dismissalOptionContainer');
     const dismissalSelect = document.getElementById('dismissalOption');
 
-    const seniorGrades = ['Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
-    const juniorGrades = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
-
-    const existingHidden = document.querySelector('input[name="entry.1010113884"][type="hidden"]');
-    if (existingHidden) existingHidden.remove();
-
     if (leaveType === 'Early Dismissal') {
-      dismissalContainer.style.display = 'block';
-
       if (juniorGrades.includes(grade)) {
-        alert("For Early Dismissal in lower grades, pickup by a parent or guardian is required.");
+        dismissalContainer.style.display = 'none';
         dismissalSelect.value = "Parent/Guardian will pick up the student from school";
-
-        let hiddenInput = document.createElement("input");
-        hiddenInput.type = "hidden";
-        hiddenInput.name = "entry.1010113884";
-        hiddenInput.value = "Parent/Guardian will pick up the student from school";
-        document.getElementById("leaveForm").appendChild(hiddenInput);
+        alert("🚸 For students in lower grades, pickup by Parent/Guardian is required.");
       } else {
+        dismissalContainer.style.display = 'block';
         dismissalSelect.value = "";
       }
-
     } else {
       dismissalContainer.style.display = 'none';
       dismissalSelect.value = "";
-
-      const existingHidden = document.querySelector('input[name="entry.1010113884"][type="hidden"]');
-      if (existingHidden) existingHidden.remove();
     }
   }
 
@@ -175,12 +156,14 @@
     }
 
     const leaveType = document.getElementById('leaveType').value;
-    const dismissalVisible = document.getElementById('dismissalOptionContainer').style.display !== 'none';
-    const dismissalVal = document.getElementById('dismissalOption').value;
+    const grade = document.getElementById('grade').value;
+    const dismissalSelect = document.getElementById('dismissalOption');
 
-    if (leaveType === 'Early Dismissal' && dismissalVisible && !dismissalVal) {
-      alert("Please select the early dismissal plan.");
-      return;
+    if (leaveType === 'Early Dismissal') {
+      if (seniorGrades.includes(grade) && !dismissalSelect.value) {
+        alert("Please select the early dismissal plan.");
+        return;
+      }
     }
 
     alert("✅ Your leave request has been submitted. You will be notified via email.");
