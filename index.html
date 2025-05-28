@@ -57,6 +57,7 @@
           <option value="">Select</option>
           <option>Parent/Guardian will pick up the student from school</option>
           <option>Student will leave on their own after early dismissal</option>
+          <option>NA</option>
         </select>
       </div>
       <input type="hidden" id="dismissalHidden" name="entry.1234567890">
@@ -156,8 +157,8 @@
     } else {
       dismissalContainer.classList.add('hidden');
       dismissalSelect.required = false;
-      dismissalHidden.disabled = true;
-      dismissalHidden.value = "";
+      dismissalHidden.disabled = false;
+      dismissalHidden.value = "NA";
     }
   }
 
@@ -179,7 +180,6 @@
       return;
     }
 
-    // Set final dismissal value to the hidden input for Google Forms
     document.getElementById('dismissalHidden').value = dismissalValue;
 
     alert("✅ Your leave request has been submitted. You will be notified via email.");
@@ -187,7 +187,6 @@
     document.getElementById('email').value = '';
     document.getElementById('leaveForm').submit();
 
-    // Refresh after 3 seconds
     setTimeout(() => {
       window.location.reload();
     }, 3000);
