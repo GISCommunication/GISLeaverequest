@@ -57,10 +57,9 @@
           <option value="">Select</option>
           <option>Parent/Guardian will pick up the student from school</option>
           <option>Student will leave on their own after early dismissal</option>
-          <option>NA</option>
         </select>
       </div>
-      <input type="hidden" id="dismissalHidden" name="entry.1234567890">
+      <input type="hidden" id="dismissalHidden" name="entry.1234567890" required>
 
       <label for="fromDate">From Date</label>
       <input type="date" id="fromDate" required name="entry.1213409688">
@@ -68,7 +67,7 @@
       <label for="toDate">To Date</label>
       <input type="date" id="toDate" required name="entry.88265946">
 
-      <label for="reason">Reason</label>
+      <label for="reason">Reason <span style="font-weight: normal; font-style: italic;">(If Early Dismissal, please mention time)</span></label>
       <textarea id="reason" rows="4" required name="entry.2006563853"></textarea>
 
       <input type="hidden" id="hiddenEmailField" name="entry.383074926" required>
@@ -144,21 +143,15 @@
     if (leaveType === 'Early Dismissal') {
       if (seniorGrades.includes(grade)) {
         dismissalContainer.classList.remove('hidden');
-        dismissalSelect.required = true;
-        dismissalHidden.disabled = true;
         dismissalHidden.value = "";
       } else if (juniorGrades.includes(grade)) {
         dismissalContainer.classList.add('hidden');
-        dismissalSelect.required = false;
-        dismissalHidden.disabled = false;
         dismissalHidden.value = "Parent/Guardian will pick up the student from school";
         alert("For younger students, pickup by Parent/Guardian is required.");
       }
     } else {
       dismissalContainer.classList.add('hidden');
-      dismissalSelect.required = false;
-      dismissalHidden.disabled = false;
-      dismissalHidden.value = "NA";
+      dismissalHidden.value = "";
     }
   }
 
@@ -175,7 +168,7 @@
       ? document.getElementById('dismissalHidden').value
       : document.getElementById('dismissalOption').value;
 
-    if (!dismissalValue) {
+    if (document.getElementById('leaveType').value === 'Early Dismissal' && !dismissalValue) {
       alert("Please select the early dismissal plan.");
       return;
     }
