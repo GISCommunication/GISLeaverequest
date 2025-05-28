@@ -12,7 +12,6 @@
     input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
     button { margin-top: 20px; padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-size: 16px; }
     button:hover { background: #1a252f; }
-    .hidden { display: none; }
     iframe { display: none; height: 0; border: none; }
     #loadingMessage { text-align: center; margin-top: 10px; color: #555; font-style: italic; }
   </style>
@@ -28,7 +27,7 @@
   <div id="loadingMessage"></div>
 
   <form id="leaveForm" target="invisibleFrame" action="https://docs.google.com/forms/d/e/1FAIpQLSdcnWetkfAFEOe_SmhsHyT7fOuW5tPuG_Bjzbv1FnM-l5m8_g/formResponse" method="POST">
-    <div id="studentInfo" class="hidden">
+    <div id="studentInfo" style="display: none;">
 
       <label for="studentName">Student Name</label>
       <select id="studentName" name="entry.1112781725" onchange="autofillDetails()" required></select>
@@ -51,9 +50,9 @@
         <option>Early Dismissal</option>
       </select>
 
-      <div id="dismissalOptionContainer" class="hidden">
+      <div id="dismissalOptionContainer" style="display: none;">
         <label for="dismissalOption">Early Dismissal Plan</label>
-        <select id="dismissalOption" name="entry.1028535530">
+        <select id="dismissalOption" name="entry.1028535530" required>
           <option value="">Select</option>
           <option>Parent/Guardian will pick up the student from school</option>
           <option>Student will leave on their own after early dismissal</option>
@@ -83,14 +82,23 @@
   function validateEmail() {
     const email = document.getElementById('email').value.trim();
     const messageDiv = document.getElementById('loadingMessage');
-    if (!email) return alert("Please enter your email.");
+
+    if (!email) {
+      alert("Please enter your email.");
+      return;
+    }
+
     messageDiv.textContent = "🔄 Please wait whilst we validate the email against our records...";
 
     fetch(`${API_URL}?email=${encodeURIComponent(email)}`)
       .then(res => res.json())
       .then(data => {
         messageDiv.textContent = "";
-        if (!data.students || data.students.length === 0) return alert("No students found for this email.");
+
+        if (!data.students || data.students.length === 0) {
+          alert("No students found for this email.");
+          return;
+        }
 
         const dropdown = document.getElementById('studentName');
         dropdown.innerHTML = '<option value="">Select Student</option>';
@@ -102,9 +110,9 @@
         });
 
         document.getElementById('hiddenEmailField').value = email;
-        document.getElementById('studentInfo').classList.remove('hidden');
+        document.getElementById('studentInfo').style.display = 'block';
       })
-      .catch(() => {
+      .catch(err => {
         messageDiv.textContent = "";
         alert("Error validating email.");
       });
@@ -117,7 +125,7 @@
     document.getElementById('grade').value = student.grade;
     document.getElementById('section').value = student.section;
     document.getElementById('studentId').value = student.studentId;
-    handleDismissalOption(); // refresh dismissal plan
+    handleDismissalOption();
   }
 
   function handleDismissalOption() {
@@ -130,16 +138,17 @@
     const juniorGrades = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
 
     if (leaveType === 'Early Dismissal') {
-      if (seniorGrades.includes(grade)) {
-        dismissalContainer.classList.remove('hidden');
-        dismissalSelect.value = "";
-      } else if (juniorGrades.includes(grade)) {
-        dismissalContainer.classList.remove('hidden');
+      dismissalContainer.style.display = 'block';
+
+      if (juniorGrades.includes(grade)) {
         dismissalSelect.value = "Parent/Guardian will pick up the student from school";
-        alert("For younger students, pickup by Parent/Guardian is required.");
+        dismissalSelect.disabled = true;
+      } else {
+        dismissalSelect.disabled = false;
+        dismissalSelect.value = "";
       }
     } else {
-      dismissalContainer.classList.add('hidden');
+      dismissalContainer.style.display = 'none';
       dismissalSelect.value = "";
     }
   }
@@ -153,17 +162,16 @@
       }
     }
 
-    const leaveType = document.getElementById('leaveType').value;
-    const dismissalSelect = document.getElementById('dismissalOption');
-
-    if (leaveType === 'Early Dismissal' && !dismissalSelect.value) {
+    if (
+      document.getElementById('leaveType').value === 'Early Dismissal' &&
+      document.getElementById('dismissalOptionContainer').style.display !== 'none' &&
+      !document.getElementById('dismissalOption').value
+    ) {
       alert("Please select the early dismissal plan.");
       return;
     }
 
     alert("✅ Your leave request has been submitted. You will be notified via email.");
-    document.getElementById('studentInfo').classList.add('hidden');
-    document.getElementById('email').value = '';
     document.getElementById('leaveForm').submit();
 
     setTimeout(() => {
