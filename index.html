@@ -26,9 +26,8 @@
   <button onclick="validateEmail()">Validate Email</button>
   <div id="loadingMessage"></div>
 
-  <form id="leaveForm">
+  <form id="leaveForm" target="invisibleFrame">
     <div id="studentInfo" style="display: none;">
-
       <label for="studentName">Student Name</label>
       <select id="studentName" onchange="autofillDetails()" required></select>
 
@@ -52,10 +51,10 @@
 
       <div id="dismissalOptionContainer" style="display: none;">
         <label for="dismissalOption">Early Dismissal Plan</label>
-        <select id="dismissalOption">
+        <select id="dismissalOption" required>
           <option value="">Select</option>
-          <option>Parent/Guardian will pick up the student from school</option>
-          <option>Student will leave on their own after early dismissal</option>
+          <option value="Parent/Guardian will pick up the student from school">Parent/Guardian will pick up the student from school</option>
+          <option value="Student will leave on their own after early dismissal">Student will leave on their own after early dismissal</option>
         </select>
       </div>
 
@@ -69,6 +68,7 @@
       <textarea id="reason" rows="4" required></textarea>
 
       <input type="hidden" id="hiddenEmailField" required>
+      <input type="hidden" id="hiddenDismissalPlan">
 
       <button type="button" onclick="handleSubmit()">Submit</button>
     </div>
@@ -133,53 +133,58 @@
     const leaveType = document.getElementById('leaveType').value.trim();
     const dismissalContainer = document.getElementById('dismissalOptionContainer');
     const dismissalSelect = document.getElementById('dismissalOption');
-    const juniorGrades = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
+    const hiddenDismissal = document.getElementById('hiddenDismissalPlan');
+
+    const juniorGrades = ['PK', 'KG1', 'KG2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5'];
 
     if (leaveType === 'Early Dismissal') {
       if (juniorGrades.includes(grade)) {
-        dismissalContainer.style.display = 'none';
-        dismissalSelect.value = 'Parent/Guardian will pick up the student from school';
         alert("Parent/Guardian must pick up the student from school.");
+        dismissalContainer.style.display = 'none';
+        hiddenDismissal.value = 'Parent/Guardian will pick up the student from school';
       } else {
         dismissalContainer.style.display = 'block';
-        dismissalSelect.value = "";
+        hiddenDismissal.value = dismissalSelect.value;
       }
     } else {
       dismissalContainer.style.display = 'none';
-      dismissalSelect.value = "";
+      dismissalSelect.value = '';
+      hiddenDismissal.value = '';
     }
   }
 
   function handleSubmit() {
-    const email = document.getElementById('hiddenEmailField').value;
-    const studentRaw = document.getElementById('studentName').value;
-    const student = JSON.parse(studentRaw || '{}');
-    const dismissalPlan = document.getElementById('dismissalOption').value;
-
-    const leaveType = document.getElementById('leaveType').value;
-    if (leaveType === 'Early Dismissal') {
-      const juniorGrades = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
-      if (!juniorGrades.includes(student.grade) && !dismissalPlan) {
-        alert("Please select the early dismissal plan.");
+    const requiredFields = ['studentName', 'studentId', 'grade', 'section', 'leaveType', 'fromDate', 'toDate', 'reason', 'hiddenEmailField'];
+    for (let id of requiredFields) {
+      if (!document.getElementById(id).value) {
+        alert('Please fill in all fields before submitting.');
         return;
       }
     }
 
+    const leaveType = document.getElementById('leaveType').value;
+    const grade = document.getElementById('grade').value.trim();
+    const dismissal = document.getElementById('dismissalOption');
+    const hiddenDismissal = document.getElementById('hiddenDismissalPlan');
+
+    if (leaveType === 'Early Dismissal' && !['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'].includes(grade) && !dismissal.value) {
+      alert("Please select the early dismissal plan.");
+      return;
+    } else if (leaveType === 'Early Dismissal' && !['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'].includes(grade)) {
+      hiddenDismissal.value = dismissal.value;
+    }
+
     const payload = {
-      email,
-      studentName: student.name,
-      studentId: student.studentId,
-      grade: student.grade,
-      section: student.section,
-      leaveType,
+      email: document.getElementById('hiddenEmailField').value,
+      studentName: JSON.parse(document.getElementById('studentName').value).name,
+      studentId: document.getElementById('studentId').value,
+      grade: document.getElementById('grade').value,
+      section: document.getElementById('section').value,
+      leaveType: leaveType,
       fromDate: document.getElementById('fromDate').value,
       toDate: document.getElementById('toDate').value,
       reason: document.getElementById('reason').value,
-      dismissalPlan: leaveType === 'Early Dismissal'
-        ? (student.grade && ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'].includes(student.grade)
-            ? 'Parent/Guardian will pick up the student from school'
-            : dismissalPlan)
-        : ''
+      dismissalPlan: hiddenDismissal.value
     };
 
     fetch(API_URL, {
@@ -187,12 +192,14 @@
       body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' }
     })
-      .then(res => res.json())
-      .then(() => {
-        alert("✅ Your leave request has been submitted. You will be notified via email.");
-        window.location.reload();
-      })
-      .catch(() => alert("Error submitting the leave request."));
+    .then(res => res.json())
+    .then(data => {
+      alert("✅ Your leave request has been submitted. You will be notified via email.");
+      setTimeout(() => window.location.reload(), 3000);
+    })
+    .catch(error => {
+      alert("❌ There was an error submitting the form. Please try again.");
+    });
   }
 </script>
 </body>
