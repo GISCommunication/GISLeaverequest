@@ -43,7 +43,7 @@
       <input type="text" id="section" readonly name="entry.1428888703" required>
 
       <label for="leaveType">Type of Leave</label>
-      <select id="leaveType" required name="entry.722608314">
+      <select id="leaveType" required name="entry.722608314" onchange="handleDismissalOption()">
         <option value="">Select</option>
         <option>Sick Leave</option>
         <option>Planned Leave</option>
@@ -53,13 +53,13 @@
 
       <div id="dismissalOptionContainer" class="hidden">
         <label for="dismissalOption">Early Dismissal Plan</label>
-        <select id="dismissalOption" name="entry.9999999999">
+        <select id="dismissalOption" name="entry.1234567890">
           <option value="">Select</option>
           <option>Parent/Guardian will pick up the student from school</option>
           <option>Student will leave on their own after early dismissal</option>
         </select>
       </div>
-      <input type="hidden" id="dismissalHidden" name="entry.9999999999">
+      <input type="hidden" id="dismissalHidden" name="entry.1234567890">
 
       <label for="fromDate">From Date</label>
       <input type="date" id="fromDate" required name="entry.1213409688">
@@ -129,8 +129,6 @@
     document.getElementById('studentId').value = student.studentId;
     handleDismissalOption();
   }
-
-  document.getElementById('leaveType').addEventListener('change', handleDismissalOption);
 
   function handleDismissalOption() {
     const grade = document.getElementById('grade').value.trim();
