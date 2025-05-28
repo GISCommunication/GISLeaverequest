@@ -55,8 +55,8 @@
         <label for="dismissalOption">Early Dismissal Plan</label>
         <select id="dismissalOption" name="entry.1028535530">
           <option value="">Select</option>
-          <option value="Parent/Guardian will pick up the student from school">Parent/Guardian will pick up the student from school</option>
-          <option value="Student will leave on their own after early dismissal">Student will leave on their own after early dismissal</option>
+          <option>Parent/Guardian will pick up the student from school</option>
+          <option>Student will leave on their own after early dismissal</option>
         </select>
       </div>
 
@@ -83,23 +83,14 @@
   function validateEmail() {
     const email = document.getElementById('email').value.trim();
     const messageDiv = document.getElementById('loadingMessage');
-
-    if (!email) {
-      alert("Please enter your email.");
-      return;
-    }
-
+    if (!email) return alert("Please enter your email.");
     messageDiv.textContent = "🔄 Please wait whilst we validate the email against our records...";
 
     fetch(`${API_URL}?email=${encodeURIComponent(email)}`)
       .then(res => res.json())
       .then(data => {
         messageDiv.textContent = "";
-
-        if (!data.students || data.students.length === 0) {
-          alert("No students found for this email.");
-          return;
-        }
+        if (!data.students || data.students.length === 0) return alert("No students found for this email.");
 
         const dropdown = document.getElementById('studentName');
         dropdown.innerHTML = '<option value="">Select Student</option>';
@@ -113,7 +104,7 @@
         document.getElementById('hiddenEmailField').value = email;
         document.getElementById('studentInfo').classList.remove('hidden');
       })
-      .catch(err => {
+      .catch(() => {
         messageDiv.textContent = "";
         alert("Error validating email.");
       });
@@ -126,7 +117,7 @@
     document.getElementById('grade').value = student.grade;
     document.getElementById('section').value = student.section;
     document.getElementById('studentId').value = student.studentId;
-    handleDismissalOption();
+    handleDismissalOption(); // refresh dismissal plan
   }
 
   function handleDismissalOption() {
@@ -145,13 +136,11 @@
       } else if (juniorGrades.includes(grade)) {
         dismissalContainer.classList.remove('hidden');
         dismissalSelect.value = "Parent/Guardian will pick up the student from school";
-        dismissalSelect.disabled = true;
         alert("For younger students, pickup by Parent/Guardian is required.");
       }
     } else {
       dismissalContainer.classList.add('hidden');
       dismissalSelect.value = "";
-      dismissalSelect.disabled = false;
     }
   }
 
@@ -164,12 +153,12 @@
       }
     }
 
-    if (document.getElementById('leaveType').value === 'Early Dismissal') {
-      const dismissalPlan = document.getElementById('dismissalOption').value;
-      if (!dismissalPlan) {
-        alert("Please select an Early Dismissal Plan.");
-        return;
-      }
+    const leaveType = document.getElementById('leaveType').value;
+    const dismissalSelect = document.getElementById('dismissalOption');
+
+    if (leaveType === 'Early Dismissal' && !dismissalSelect.value) {
+      alert("Please select the early dismissal plan.");
+      return;
     }
 
     alert("✅ Your leave request has been submitted. You will be notified via email.");
