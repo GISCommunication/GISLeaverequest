@@ -53,13 +53,12 @@
 
       <div id="dismissalOptionContainer" class="hidden">
         <label for="dismissalOption">Early Dismissal Plan</label>
-        <select id="dismissalOption">
+        <select id="dismissalOption" name="entry.1028535530">
           <option value="">Select</option>
-          <option>Parent/Guardian will pick up the student from school</option>
-          <option>Student will leave on their own after early dismissal</option>
+          <option value="Parent/Guardian will pick up the student from school">Parent/Guardian will pick up the student from school</option>
+          <option value="Student will leave on their own after early dismissal">Student will leave on their own after early dismissal</option>
         </select>
       </div>
-      <input type="hidden" id="dismissalHidden" name="entry.1028535530" required>
 
       <label for="fromDate">From Date</label>
       <input type="date" id="fromDate" required name="entry.1213409688">
@@ -135,7 +134,6 @@
     const leaveType = document.getElementById('leaveType').value.trim();
     const dismissalContainer = document.getElementById('dismissalOptionContainer');
     const dismissalSelect = document.getElementById('dismissalOption');
-    const dismissalHidden = document.getElementById('dismissalHidden');
 
     const seniorGrades = ['Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
     const juniorGrades = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
@@ -143,15 +141,17 @@
     if (leaveType === 'Early Dismissal') {
       if (seniorGrades.includes(grade)) {
         dismissalContainer.classList.remove('hidden');
-        dismissalHidden.value = "";
+        dismissalSelect.value = "";
       } else if (juniorGrades.includes(grade)) {
-        dismissalContainer.classList.add('hidden');
-        dismissalHidden.value = "Parent/Guardian will pick up the student from school";
+        dismissalContainer.classList.remove('hidden');
+        dismissalSelect.value = "Parent/Guardian will pick up the student from school";
+        dismissalSelect.disabled = true;
         alert("For younger students, pickup by Parent/Guardian is required.");
       }
     } else {
       dismissalContainer.classList.add('hidden');
-      dismissalHidden.value = "";
+      dismissalSelect.value = "";
+      dismissalSelect.disabled = false;
     }
   }
 
@@ -164,16 +164,13 @@
       }
     }
 
-    const dismissalValue = document.getElementById('dismissalOptionContainer').classList.contains('hidden')
-      ? document.getElementById('dismissalHidden').value
-      : document.getElementById('dismissalOption').value;
-
-    if (document.getElementById('leaveType').value === 'Early Dismissal' && !dismissalValue) {
-      alert("Please select the early dismissal plan.");
-      return;
+    if (document.getElementById('leaveType').value === 'Early Dismissal') {
+      const dismissalPlan = document.getElementById('dismissalOption').value;
+      if (!dismissalPlan) {
+        alert("Please select an Early Dismissal Plan.");
+        return;
+      }
     }
-
-    document.getElementById('dismissalHidden').value = dismissalValue;
 
     alert("✅ Your leave request has been submitted. You will be notified via email.");
     document.getElementById('studentInfo').classList.add('hidden');
