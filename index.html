@@ -51,6 +51,16 @@
         <option>Early Dismissal</option>
       </select>
 
+      <div id="dismissalOptionContainer" class="hidden">
+        <label for="dismissalOption">Early Dismissal Plan</label>
+        <select id="dismissalOption" name="entry.9999999999">
+          <option value="">Select</option>
+          <option>Parent/Guardian will pick up the student from school</option>
+          <option>Student will leave on their own after early dismissal</option>
+        </select>
+      </div>
+      <input type="hidden" id="dismissalHidden" name="entry.9999999999">
+
       <label for="fromDate">From Date</label>
       <input type="date" id="fromDate" required name="entry.1213409688">
 
@@ -80,13 +90,12 @@
       return;
     }
 
-    // Show polite loading message
     messageDiv.textContent = "🔄 Please wait whilst we validate the email against our records...";
 
     fetch(`${API_URL}?email=${encodeURIComponent(email)}`)
       .then(res => res.json())
       .then(data => {
-        messageDiv.textContent = ""; // Clear loading message
+        messageDiv.textContent = "";
 
         if (!data.students || data.students.length === 0) {
           alert("No students found for this email.");
@@ -118,6 +127,38 @@
     document.getElementById('grade').value = student.grade;
     document.getElementById('section').value = student.section;
     document.getElementById('studentId').value = student.studentId;
+    handleDismissalOption();
+  }
+
+  document.getElementById('leaveType').addEventListener('change', handleDismissalOption);
+
+  function handleDismissalOption() {
+    const grade = document.getElementById('grade').value.trim();
+    const leaveType = document.getElementById('leaveType').value.trim();
+    const dismissalContainer = document.getElementById('dismissalOptionContainer');
+    const dismissalSelect = document.getElementById('dismissalOption');
+    const dismissalHidden = document.getElementById('dismissalHidden');
+
+    const seniorGrades = ['Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
+    const juniorGrades = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
+
+    if (leaveType === 'Early Dismissal') {
+      if (seniorGrades.includes(grade)) {
+        dismissalContainer.classList.remove('hidden');
+        dismissalSelect.required = true;
+        dismissalHidden.disabled = true;
+      } else if (juniorGrades.includes(grade)) {
+        dismissalContainer.classList.add('hidden');
+        dismissalSelect.required = false;
+        dismissalHidden.disabled = false;
+        dismissalHidden.value = "Parent/Guardian will pick up the student from school";
+      }
+    } else {
+      dismissalContainer.classList.add('hidden');
+      dismissalSelect.required = false;
+      dismissalHidden.disabled = true;
+      dismissalHidden.value = "";
+    }
   }
 
   function handleSubmit() {
@@ -127,6 +168,15 @@
         alert('Please fill in all fields before submitting.');
         return;
       }
+    }
+
+    const dismissalValue = document.getElementById('dismissalOptionContainer').classList.contains('hidden')
+      ? document.getElementById('dismissalHidden').value
+      : document.getElementById('dismissalOption').value;
+
+    if (!dismissalValue) {
+      alert("Please select the early dismissal plan.");
+      return;
     }
 
     alert("✅ Your leave request has been submitted. You will be notified via email.");
