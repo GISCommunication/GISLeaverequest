@@ -53,7 +53,7 @@
 
       <div id="dismissalOptionContainer" class="hidden">
         <label for="dismissalOption">Early Dismissal Plan</label>
-        <select id="dismissalOption" name="entry.1234567890">
+        <select id="dismissalOption">
           <option value="">Select</option>
           <option>Parent/Guardian will pick up the student from school</option>
           <option>Student will leave on their own after early dismissal</option>
@@ -145,11 +145,13 @@
         dismissalContainer.classList.remove('hidden');
         dismissalSelect.required = true;
         dismissalHidden.disabled = true;
+        dismissalHidden.value = "";
       } else if (juniorGrades.includes(grade)) {
         dismissalContainer.classList.add('hidden');
         dismissalSelect.required = false;
         dismissalHidden.disabled = false;
         dismissalHidden.value = "Parent/Guardian will pick up the student from school";
+        alert("For younger students, pickup by Parent/Guardian is required.");
       }
     } else {
       dismissalContainer.classList.add('hidden');
@@ -177,10 +179,18 @@
       return;
     }
 
+    // Set final dismissal value to the hidden input for Google Forms
+    document.getElementById('dismissalHidden').value = dismissalValue;
+
     alert("✅ Your leave request has been submitted. You will be notified via email.");
     document.getElementById('studentInfo').classList.add('hidden');
     document.getElementById('email').value = '';
     document.getElementById('leaveForm').submit();
+
+    // Refresh after 3 seconds
+    setTimeout(() => {
+      window.location.reload();
+    }, 3000);
   }
 </script>
 </body>
