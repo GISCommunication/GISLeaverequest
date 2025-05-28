@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GIS Leave Request Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
-    .container { max-width: 600px; background: #fff; padding: 20px; margin: auto; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     h2 { text-align: center; }
     label { display: block; margin-top: 15px; font-weight: bold; }
     input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
     button { margin-top: 20px; padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-size: 16px; }
     button:hover { background: #1a252f; }
+    #loadingMessage { text-align: center; margin-top: 10px; color: #555; font-style: italic; }
+    #dismissalOptionContainer { display: none; }
   </style>
 </head>
 <body>
@@ -19,129 +21,130 @@
   <h2>GEMS International School, Al Khail</h2>
   <h2>Leave Request Form</h2>
 
-  <label for="email">Parent/Guardian Email</label>
+  <label for="email">Parent/Guardian Email registered with GIS</label>
   <input type="email" id="email" required>
   <button onclick="validateEmail()">Validate Email</button>
+  <div id="loadingMessage"></div>
 
-  <form id="leaveForm" style="display: none;">
-    <label for="studentName">Student Name</label>
-    <select id="studentName" onchange="autofillDetails()" required></select>
+  <form id="leaveForm">
+    <div id="studentInfo" style="display: none;">
 
-    <label for="studentId">Student ID</label>
-    <input type="text" id="studentId" readonly required>
+      <label for="studentName">Student Name</label>
+      <select id="studentName" required onchange="autofillDetails()"></select>
 
-    <label for="grade">Grade</label>
-    <input type="text" id="grade" readonly required>
+      <input type="hidden" id="studentId">
+      <input type="hidden" id="grade">
+      <input type="hidden" id="section">
+      <input type="hidden" id="hiddenEmailField">
+      <input type="hidden" id="dismissalPlan">
 
-    <label for="section">Section</label>
-    <input type="text" id="section" readonly required>
+      <label for="leaveType">Type of Leave</label>
+      <select id="leaveType" required onchange="handleDismissalOption()">
+        <option value="">Select</option>
+        <option>Sick Leave</option>
+        <option>Planned Leave</option>
+        <option>Unplanned Leave</option>
+        <option>Early Dismissal</option>
+      </select>
 
-    <label for="leaveType">Type of Leave</label>
-    <select id="leaveType" required onchange="handleLeaveType()">
-      <option value="">Select</option>
-      <option>Sick Leave</option>
-      <option>Planned Leave</option>
-      <option>Unplanned Leave</option>
-      <option>Early Dismissal</option>
-    </select>
+      <div id="dismissalOptionContainer">
+        <label for="dismissalOption">Early Dismissal Plan</label>
+        <select id="dismissalOption">
+          <option value="">Select</option>
+          <option>Parent/Guardian will pick up the student from school</option>
+          <option>Student will leave on their own after early dismissal</option>
+        </select>
+      </div>
 
-    <div id="dismissalContainer" style="display: none;"></div>
+      <label for="fromDate">From Date</label>
+      <input type="date" id="fromDate" required>
 
-    <label for="fromDate">From Date</label>
-    <input type="date" id="fromDate" required>
+      <label for="toDate">To Date</label>
+      <input type="date" id="toDate" required>
 
-    <label for="toDate">To Date</label>
-    <input type="date" id="toDate" required>
+      <label for="reason">Reason <span style="font-weight: normal; font-style: italic;">(If Early Dismissal, please mention time)</span></label>
+      <textarea id="reason" rows="4" required></textarea>
 
-    <label for="reason">Reason <i>(If Early Dismissal, please mention time)</i></label>
-    <textarea id="reason" required></textarea>
-
-    <input type="hidden" id="hiddenEmail">
-    <input type="hidden" id="dismissalPlan">
-
-    <button type="submit">Submit</button>
+      <button type="button" onclick="handleSubmit()">Submit</button>
+    </div>
   </form>
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwDPoMtmgI8nPA4LhjYYKcai6O4CFaXo8oQR-UcZqfe9xfu9zU4fYHcfUAeQy9wTOCkXA/exec';
-let studentMap = [];
+const API_URL = 'https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec';
 
 function validateEmail() {
   const email = document.getElementById('email').value.trim();
-  if (!email) return alert("Please enter an email.");
+  const messageDiv = document.getElementById('loadingMessage');
+
+  if (!email) return alert("Please enter your email.");
+  messageDiv.innerText = '🔄 Validating email...';
 
   fetch(`${API_URL}?email=${encodeURIComponent(email)}`)
     .then(res => res.json())
     .then(data => {
-      if (!data.students || data.students.length === 0) return alert("No students found.");
-
+      messageDiv.innerText = '';
       const dropdown = document.getElementById('studentName');
       dropdown.innerHTML = '<option value="">Select Student</option>';
-      studentMap = data.students;
 
-      data.students.forEach((stu, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = stu.name;
-        dropdown.appendChild(opt);
+      if (!data.students || data.students.length === 0) {
+        alert("No students found for this email.");
+        return;
+      }
+
+      data.students.forEach(stu => {
+        const option = document.createElement('option');
+        option.textContent = stu.name;
+        option.value = JSON.stringify(stu);
+        dropdown.appendChild(option);
       });
 
-      document.getElementById('hiddenEmail').value = email;
-      document.getElementById('leaveForm').style.display = 'block';
+      document.getElementById('hiddenEmailField').value = email;
+      document.getElementById('studentInfo').style.display = 'block';
+    })
+    .catch(() => {
+      messageDiv.innerText = '';
+      alert("Something went wrong while validating.");
     });
 }
 
 function autofillDetails() {
-  const idx = document.getElementById('studentName').value;
-  if (idx === '') return;
-  const student = studentMap[idx];
-  document.getElementById('studentId').value = student.studentId;
+  const selected = document.getElementById('studentName').value;
+  if (!selected) return;
+  const student = JSON.parse(selected);
+
   document.getElementById('grade').value = student.grade;
   document.getElementById('section').value = student.section;
-  handleLeaveType();
+  document.getElementById('studentId').value = student.studentId;
 }
 
-function handleLeaveType() {
+function handleDismissalOption() {
   const leaveType = document.getElementById('leaveType').value;
   const grade = document.getElementById('grade').value;
-  const dismissalContainer = document.getElementById('dismissalContainer');
-  const dismissalPlanInput = document.getElementById('dismissalPlan');
+  const dismissalContainer = document.getElementById('dismissalOptionContainer');
+  const dismissalPlanField = document.getElementById('dismissalPlan');
 
-  dismissalContainer.innerHTML = '';
-  dismissalPlanInput.value = '';
+  const juniors = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
 
-  if (leaveType !== 'Early Dismissal') return;
-
-  const primaryGrades = ['PK','KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5'];
-  const secondaryGrades = ['Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
-
-  if (primaryGrades.includes(grade)) {
-    alert("For Primary students, Parent/Guardian will pick up the student from school.");
-    dismissalPlanInput.value = "Parent/Guardian will pick up the student from school";
-  } else if (secondaryGrades.includes(grade)) {
-    dismissalContainer.style.display = 'block';
-    dismissalContainer.innerHTML = `
-      <label for="dismissalOption">Early Dismissal Plan</label>
-      <select id="dismissalOption" required>
-        <option value="">Select</option>
-        <option>Parent/Guardian will pick up the student from school</option>
-        <option>Student will leave on their own after early dismissal</option>
-      </select>
-    `;
-
-    document.getElementById('dismissalOption').addEventListener('change', function () {
-      dismissalPlanInput.value = this.value;
-    });
+  if (leaveType === 'Early Dismissal') {
+    if (juniors.includes(grade)) {
+      alert("Parent/Guardian will pick up the student from school");
+      dismissalPlanField.value = "Parent/Guardian will pick up the student from school";
+      dismissalContainer.style.display = 'none';
+    } else {
+      dismissalPlanField.value = '';
+      dismissalContainer.style.display = 'block';
+    }
+  } else {
+    dismissalPlanField.value = '';
+    dismissalContainer.style.display = 'none';
   }
 }
 
-document.getElementById('leaveForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-
-  const payload = {
-    email: document.getElementById('hiddenEmail').value,
-    studentName: studentMap[document.getElementById('studentName').value].name,
+function handleSubmit() {
+  const form = {
+    email: document.getElementById('hiddenEmailField').value,
+    studentName: document.getElementById('studentName').selectedOptions[0].text,
     studentId: document.getElementById('studentId').value,
     grade: document.getElementById('grade').value,
     section: document.getElementById('section').value,
@@ -149,26 +152,28 @@ document.getElementById('leaveForm').addEventListener('submit', function (e) {
     fromDate: document.getElementById('fromDate').value,
     toDate: document.getElementById('toDate').value,
     reason: document.getElementById('reason').value,
-    dismissalPlan: document.getElementById('dismissalPlan').value || ''
+    dismissalPlan: document.getElementById('dismissalPlan').value || document.getElementById('dismissalOption').value
   };
 
-  if (payload.leaveType === 'Early Dismissal' && payload.grade.startsWith('Grade 6') === false && !payload.dismissalPlan) {
-    alert("Dismissal plan must be selected or captured.");
-    return;
+  if (!form.email || !form.studentId || !form.leaveType || !form.fromDate || !form.toDate || !form.reason) {
+    return alert("Please fill all required fields.");
+  }
+  if (form.leaveType === 'Early Dismissal' && !form.dismissalPlan) {
+    return alert("Please confirm the dismissal plan.");
   }
 
   fetch(API_URL, {
     method: 'POST',
-    body: JSON.stringify(payload),
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(form)
   })
     .then(res => res.json())
-    .then(resp => {
+    .then(data => {
       alert("✅ Leave request submitted successfully.");
-      location.reload();
+      window.location.reload();
     })
-    .catch(() => alert("Error submitting leave request."));
-});
+    .catch(() => alert("Error submitting form."));
+}
 </script>
 </body>
 </html>
