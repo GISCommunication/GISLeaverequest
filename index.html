@@ -1,40 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>GIS Leave Request</title>
+  <meta charset="UTF-8">
+  <title>GIS Leave Request Form</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      max-width: 600px;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+      padding: 40px;
+      max-width: 700px;
       margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      background: white;
+    }
+    h1 {
+      text-align: center;
+      color: #003366;
+      margin-bottom: 5px;
+    }
+    h3 {
+      text-align: center;
+      color: #666;
+      font-weight: normal;
+      margin-top: 0;
+      margin-bottom: 30px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+    select, input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005999;
     }
     .hidden { display: none; }
     .loading-message {
-      background-color: #f0f0f0;
       padding: 10px;
-      margin-top: 10px;
+      background: #fffae6;
+      margin-top: 15px;
+      border-left: 5px solid #ffc107;
       font-style: italic;
-    }
-    label { display: block; margin-top: 15px; font-weight: bold; }
-    select, input, textarea, button {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      box-sizing: border-box;
+      color: #555;
     }
   </style>
 </head>
 <body>
 
-  <h2>GIS Leave Request Form</h2>
+  <h1>GEMS International School, Al Khail</h1>
+  <h3>Student Leave Request Form</h3>
 
   <form id="leaveForm">
     <label>Email</label>
     <input type="email" id="email" required>
     <button type="button" onclick="validateEmail()">Validate Email</button>
 
-    <div id="loadingMessage" class="loading-message hidden">GIS takes safeguarding seriously. Please wait whilst we validate the email against our records...</div>
+    <div id="loadingMessage" class="loading-message hidden">
+      GIS takes safeguarding seriously. Please wait whilst we validate the email against our records...
+    </div>
 
     <div id="studentSection" class="hidden">
       <label>Student Name</label>
@@ -64,9 +104,13 @@
       <label>To Date</label>
       <input type="date" id="toDate" required>
 
-      <label>Reason<br><small>(Please mention dismissal time for Early Dismissal)</small></label>
+      <label>Reason <small>(Please mention dismissal time for Early Dismissal)</small></label>
       <textarea id="reason" required></textarea>
 
+      <!-- Hidden input for lower grades -->
+      <input type="hidden" id="dismissalOptionHidden" name="dismissalPlan">
+
+      <!-- Dropdown for upper grades -->
       <div id="dismissalPlanContainer" class="hidden">
         <label>Dismissal Plan</label>
         <select id="dismissalOptionSelect">
@@ -76,16 +120,16 @@
         </select>
       </div>
 
-      <input type="hidden" id="dismissalOptionHidden" name="dismissalPlan">
-      <br><button type="submit">Submit Request</button>
+      <button type="submit">Submit Request</button>
     </div>
   </form>
 
   <script>
     function validateEmail() {
       const email = document.getElementById('email').value.trim();
-      if (!email) return alert("Please enter an email.");
       const loading = document.getElementById('loadingMessage');
+      if (!email) return alert("Please enter an email.");
+
       loading.classList.remove('hidden');
       document.getElementById('studentSection').classList.add('hidden');
 
@@ -125,7 +169,7 @@
 
     function handleLeaveTypeChange() {
       const leaveType = document.getElementById('leaveType').value;
-      const grade = document.getElementById('grade').value;
+      const grade = document.getElementById('grade').value.trim();
       const lowerGrades = ["PK", "KG1", "KG2", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"];
 
       const hiddenInput = document.getElementById('dismissalOptionHidden');
@@ -155,11 +199,12 @@
       const studentDropdown = document.getElementById('studentName');
       const selected = studentDropdown.selectedOptions[0];
 
-      const dismissalPlan = document.getElementById('dismissalOptionHidden').value || document.getElementById('dismissalOptionSelect').value;
+      const dismissalPlan = document.getElementById('dismissalOptionHidden').value 
+                         || document.getElementById('dismissalOptionSelect').value;
       const leaveType = document.getElementById('leaveType').value;
 
       if (leaveType === "Early Dismissal" && !dismissalPlan) {
-        alert("Please select a dismissal plan.");
+        alert("Please select or confirm the dismissal plan.");
         return;
       }
 
@@ -185,7 +230,7 @@
       .then(response => {
         if (response.status === 'Success') {
           alert("Leave request submitted successfully!");
-          window.location.reload(); // auto refresh
+          window.location.reload();
         } else {
           alert("Submission failed. Please try again.");
         }
