@@ -191,19 +191,20 @@
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" }
       })
-        .then(res => res.json())
-        .then(response => {
-          if (response.status === "Success") {
-            alert("Request submitted successfully!");
-            window.location.reload();
-          } else {
-            alert("Failed to submit request.");
-          }
-        })
-        .catch(err => {
-          alert("Error submitting request.");
-          console.error(err);
-        });
+      .then(res => res.json())
+      .then(response => {
+        if (response.status === "Success") {
+          alert("Request submitted successfully!");
+          window.location.reload();
+        } else {
+          alert("Failed to submit request.");
+          console.error("Response returned:", response);
+        }
+      })
+      .catch(err => {
+        alert("Error submitting request.");
+        console.error("Fetch error:", err);
+      });
     }
   </script>
 </body>
