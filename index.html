@@ -2,172 +2,178 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GIS Leave Request Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GIS Leave Request</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
       margin: 0;
       padding: 20px;
-      background: #f0f2f5;
     }
+
     .container {
       max-width: 600px;
       margin: auto;
-      background: #fff;
-      padding: 30px;
+      background: white;
       border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
-    h1 {
+
+    h2 {
       text-align: center;
-      color: #003366;
-      margin-bottom: 5px;
+      color: #2c3e50;
     }
-    h3 {
-      text-align: center;
-      color: #666;
-      font-weight: normal;
-      margin-top: 0;
-      margin-bottom: 25px;
-    }
+
     label {
       display: block;
       margin-top: 15px;
       font-weight: bold;
-      color: #333;
     }
+
     input, select, textarea, button {
       width: 100%;
       padding: 10px;
-      margin-top: 6px;
-      border-radius: 6px;
+      margin-top: 5px;
       border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #003366;
-      color: white;
-      margin-top: 25px;
+      border-radius: 6px;
       font-size: 16px;
+    }
+
+    button {
+      background-color: #004f9f;
+      color: white;
+      font-weight: bold;
+      border: none;
+      margin-top: 20px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
     }
+
     button:hover {
-      background-color: #005999;
+      background-color: #003e7e;
     }
-    .loading-message {
-      margin-top: 15px;
-      padding: 10px;
-      background: #fff3cd;
-      border-left: 5px solid #ffc107;
-      font-style: italic;
+
+    .hidden {
       display: none;
+    }
+
+    .loading {
+      color: #555;
+      font-style: italic;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 15px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>GEMS International School, Al Khail</h1>
-    <h3>Leave Request Form</h3>
+    <h2>GIS Leave Request Form</h2>
 
-    <form id="leaveForm">
-      <label>Email</label>
-      <input type="email" id="email" required />
+    <label for="email">Parent Email</label>
+    <input type="email" id="email" required />
+    <button onclick="validateEmail()">Validate Email</button>
 
-      <button type="button" onclick="validateEmail()">Validate Email</button>
+    <div id="loadingMessage" class="loading hidden">GIS takes safeguarding seriously. Please wait whilst we validate the email against our records...</div>
 
-      <div id="loadingMessage" class="loading-message">
-        GIS takes safeguarding seriously. Please wait whilst we validate the email...
-      </div>
+    <div id="formSection" class="hidden">
+      <label for="studentName">Select Student</label>
+      <select id="studentName" onchange="populateDetails()" required></select>
 
-      <div id="studentSection" style="display: none;">
-        <label>Student Name</label>
-        <select id="studentName" required onchange="updateStudentInfo()"></select>
+      <label for="studentId">Student ID</label>
+      <input type="text" id="studentId" readonly />
 
-        <label>Student ID</label>
-        <input type="text" id="studentId" readonly />
+      <label for="grade">Grade</label>
+      <input type="text" id="grade" readonly />
 
-        <label>Grade</label>
-        <input type="text" id="grade" readonly />
+      <label for="section">Section</label>
+      <input type="text" id="section" readonly />
 
-        <label>Section</label>
-        <input type="text" id="section" readonly />
+      <label for="leaveType">Leave Type</label>
+      <select id="leaveType" required>
+        <option value="">Select Leave Type</option>
+        <option>Sick Leave</option>
+        <option>Planned Leave</option>
+        <option>Unplanned Leave</option>
+        <option>Early Dismissal</option>
+      </select>
 
-        <label>Leave Type</label>
-        <select id="leaveType" required>
-          <option value="">Select</option>
-          <option value="Sick Leave">Sick Leave</option>
-          <option value="Planned Leave">Planned Leave</option>
-          <option value="Unplanned Leave">Unplanned Leave</option>
-          <option value="Early Dismissal">Early Dismissal</option>
-        </select>
+      <label for="fromDate">From Date</label>
+      <input type="date" id="fromDate" required />
 
-        <label>From Date</label>
-        <input type="date" id="fromDate" required />
+      <label for="toDate">To Date</label>
+      <input type="date" id="toDate" required />
 
-        <label>To Date</label>
-        <input type="date" id="toDate" required />
+      <label for="reason">Reason</label>
+      <textarea id="reason" rows="3" required></textarea>
 
-        <label>Reason</label>
-        <textarea id="reason" required></textarea>
-
-        <button type="submit">Submit Request</button>
-      </div>
-    </form>
+      <button onclick="submitForm()">Submit Request</button>
+    </div>
   </div>
 
   <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec";
+
     function validateEmail() {
       const email = document.getElementById("email").value.trim();
-      if (!email) return alert("Please enter an email.");
+      if (!email) {
+        alert("Please enter an email address.");
+        return;
+      }
 
-      document.getElementById("loadingMessage").style.display = "block";
-      document.getElementById("studentSection").style.display = "none";
+      document.getElementById("loadingMessage").classList.remove("hidden");
 
-      fetch(`https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec?email=${email}`)
-        .then((res) => res.json())
-        .then((data) => {
-          document.getElementById("loadingMessage").style.display = "none";
-          const dropdown = document.getElementById("studentName");
-          dropdown.innerHTML = "";
+      fetch(`${scriptURL}?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("loadingMessage").classList.add("hidden");
+          const select = document.getElementById("studentName");
+          select.innerHTML = "";
 
           if (!data.students || data.students.length === 0) {
-            alert("No student found.");
+            alert("No matching students found.");
             return;
           }
 
-          data.students.forEach((student) => {
-            const opt = document.createElement("option");
-            opt.value = student.name;
-            opt.textContent = student.name;
-            opt.dataset.id = student.studentId;
-            opt.dataset.grade = student.grade;
-            opt.dataset.section = student.section;
-            dropdown.appendChild(opt);
+          data.students.forEach(student => {
+            const option = document.createElement("option");
+            option.value = student.name;
+            option.textContent = student.name;
+            option.dataset.id = student.studentId;
+            option.dataset.grade = student.grade;
+            option.dataset.section = student.section;
+            select.appendChild(option);
           });
 
-          document.getElementById("studentSection").style.display = "block";
-          updateStudentInfo();
+          document.getElementById("formSection").classList.remove("hidden");
+          populateDetails();
         })
-        .catch((err) => {
+        .catch(err => {
+          document.getElementById("loadingMessage").classList.add("hidden");
+          alert("Error validating email.");
           console.error(err);
-          alert("Error validating email. Please try again.");
         });
     }
 
-    function updateStudentInfo() {
+    function populateDetails() {
       const selected = document.getElementById("studentName").selectedOptions[0];
-      document.getElementById("studentId").value = selected.dataset.id || "";
-      document.getElementById("grade").value = selected.dataset.grade || "";
-      document.getElementById("section").value = selected.dataset.section || "";
+      document.getElementById("studentId").value = selected.dataset.id;
+      document.getElementById("grade").value = selected.dataset.grade;
+      document.getElementById("section").value = selected.dataset.section;
     }
 
-    document.getElementById("leaveForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-
+    function submitForm() {
       const selected = document.getElementById("studentName").selectedOptions[0];
-
       const data = {
         email: document.getElementById("email").value,
         studentName: selected.value,
@@ -177,28 +183,28 @@
         leaveType: document.getElementById("leaveType").value,
         fromDate: document.getElementById("fromDate").value,
         toDate: document.getElementById("toDate").value,
-        reason: document.getElementById("reason").value,
+        reason: document.getElementById("reason").value
       };
 
-      fetch("https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec", {
+      fetch(scriptURL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" }
       })
-        .then((res) => res.json())
-        .then((response) => {
+        .then(res => res.json())
+        .then(response => {
           if (response.status === "Success") {
-            alert("Leave request submitted successfully!");
+            alert("Request submitted successfully!");
             window.location.reload();
           } else {
-            alert("Submission failed. Please try again.");
+            alert("Failed to submit request.");
           }
         })
-        .catch((err) => {
-          console.error("Submit Error:", err);
-          alert("An error occurred while submitting.");
+        .catch(err => {
+          alert("Error submitting request.");
+          console.error(err);
         });
-    });
+    }
   </script>
 </body>
 </html>
