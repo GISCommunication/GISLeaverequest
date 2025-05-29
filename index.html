@@ -5,6 +5,7 @@
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     .hidden { display: none; }
+    .field-label { font-weight: bold; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -17,10 +18,16 @@
     <button type="button" onclick="validateEmail()">Validate Email</button><br><br>
 
     <div id="studentSection" class="hidden">
-      <label>Student Name:</label><br>
-      <select id="studentName" name="studentName" required></select><br><br>
+      <div class="field-label">Student Name:</div>
+      <select id="studentName" name="studentName" required onchange="updateStudentInfo()"></select><br><br>
 
-      <label>Leave Type:</label><br>
+      <div id="studentDetails">
+        <div><span class="field-label">Student ID:</span> <span id="displayId"></span></div>
+        <div><span class="field-label">Grade:</span> <span id="displayGrade"></span></div>
+        <div><span class="field-label">Section:</span> <span id="displaySection"></span></div>
+      </div><br>
+
+      <div class="field-label">Leave Type:</div>
       <select id="leaveType" name="leaveType" required onchange="handleLeaveTypeChange()">
         <option value="">Select Leave Type</option>
         <option value="Sick Leave">Sick Leave</option>
@@ -29,24 +36,25 @@
         <option value="Early Dismissal">Early Dismissal</option>
       </select><br><br>
 
-      <label>From Date:</label><br>
+      <div class="field-label">From Date:</div>
       <input type="date" id="fromDate" required><br><br>
 
-      <label>To Date:</label><br>
+      <div class="field-label">To Date:</div>
       <input type="date" id="toDate" required><br><br>
 
-      <label>Reason:</label><br>
+      <div class="field-label">Reason:</div>
       <textarea id="reason" required></textarea><br><br>
 
-      <!-- Hidden or dropdown for dismissal plan -->
+      <!-- Dismissal plan -->
       <div id="dismissalPlanContainer" class="hidden">
-        <label>Dismissal Plan:</label><br>
+        <div class="field-label">Dismissal Plan:</div>
         <select id="dismissalOptionSelect" name="dismissalPlan">
           <option value="">Select an option</option>
           <option value="Parent/Guardian will pick up the student from school">Parent/Guardian will pick up the student from school</option>
           <option value="Student will leave on their own after early dismissal">Student will leave on their own after early dismissal</option>
         </select>
       </div>
+
       <input type="hidden" id="dismissalOptionHidden" name="dismissalPlan">
 
       <br><button type="submit">Submit Request</button>
@@ -54,57 +62,66 @@
   </form>
 
   <script>
-    let selectedStudent = {};
-
     function validateEmail() {
       const email = document.getElementById('email').value;
       if (!email) return alert("Please enter an email.");
 
       alert("GIS takes safeguarding seriously. Please wait whilst we validate the email against our records...");
 
-      fetch(`https://script.google.com/macros/s/YOUR_DEPLOYED_URL/exec?email=${email}`)
-        .then(response => response.json())
+      fetch(`https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec?email=${email}`)
+        .then(res => res.json())
         .then(data => {
           const dropdown = document.getElementById('studentName');
           dropdown.innerHTML = '';
-          if (data.students.length === 0) {
-            alert("No student found for this email.");
+          if (!data.students || data.students.length === 0) {
+            alert("No student found.");
             return;
           }
 
           data.students.forEach(student => {
-            const option = document.createElement('option');
-            option.value = student.name;
-            option.textContent = student.name;
-            option.dataset.id = student.studentId;
-            option.dataset.grade = student.grade;
-            option.dataset.section = student.section;
-            dropdown.appendChild(option);
+            const opt = document.createElement('option');
+            opt.value = student.name;
+            opt.textContent = student.name;
+            opt.dataset.id = student.studentId;
+            opt.dataset.grade = student.grade;
+            opt.dataset.section = student.section;
+            dropdown.appendChild(opt);
           });
 
           document.getElementById('studentSection').classList.remove('hidden');
+          updateStudentInfo(); // Show initial details
         });
+    }
+
+    function updateStudentInfo() {
+      const dropdown = document.getElementById('studentName');
+      const selected = dropdown.options[dropdown.selectedIndex];
+
+      document.getElementById('displayId').textContent = selected.dataset.id || '';
+      document.getElementById('displayGrade').textContent = selected.dataset.grade || '';
+      document.getElementById('displaySection').textContent = selected.dataset.section || '';
     }
 
     function handleLeaveTypeChange() {
       const leaveType = document.getElementById('leaveType').value;
-      const studentDropdown = document.getElementById('studentName');
-      const selectedOption = studentDropdown.options[studentDropdown.selectedIndex];
+      const selected = document.getElementById('studentName').options[document.getElementById('studentName').selectedIndex];
+      const grade = selected.dataset.grade || '';
 
-      const grade = selectedOption?.dataset?.grade || '';
       const primaryGrades = ["PK", "KG1", "KG2", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"];
 
       if (leaveType === "Early Dismissal") {
         if (primaryGrades.includes(grade)) {
           alert("Parent/Guardian will pick up the student from school.");
           document.getElementById('dismissalOptionHidden').value = "Parent/Guardian will pick up the student from school";
+          document.getElementById('dismissalOptionSelect').value = "";
           document.getElementById('dismissalPlanContainer').classList.add('hidden');
         } else {
-          document.getElementById('dismissalOptionSelect').value = '';
+          document.getElementById('dismissalOptionHidden').value = "";
           document.getElementById('dismissalPlanContainer').classList.remove('hidden');
         }
       } else {
-        document.getElementById('dismissalOptionHidden').value = '';
+        document.getElementById('dismissalOptionHidden').value = "";
+        document.getElementById('dismissalOptionSelect').value = "";
         document.getElementById('dismissalPlanContainer').classList.add('hidden');
       }
     }
@@ -113,41 +130,47 @@
       e.preventDefault();
 
       const studentDropdown = document.getElementById('studentName');
-      const selectedOption = studentDropdown.options[studentDropdown.selectedIndex];
+      const selected = studentDropdown.options[studentDropdown.selectedIndex];
 
-      const data = {
-        email: document.getElementById('email').value,
-        studentName: selectedOption.value,
-        studentId: selectedOption.dataset.id,
-        grade: selectedOption.dataset.grade,
-        section: selectedOption.dataset.section,
-        leaveType: document.getElementById('leaveType').value,
-        fromDate: document.getElementById('fromDate').value,
-        toDate: document.getElementById('toDate').value,
-        reason: document.getElementById('reason').value,
-        dismissalPlan: document.getElementById('dismissalOptionHidden').value || document.getElementById('dismissalOptionSelect').value
-      };
+      const dismissalHidden = document.getElementById('dismissalOptionHidden').value;
+      const dismissalSelect = document.getElementById('dismissalOptionSelect').value;
+      const leaveType = document.getElementById('leaveType').value;
+      const dismissalPlan = dismissalHidden || dismissalSelect;
 
-      if (data.leaveType === "Early Dismissal" && !data.dismissalPlan) {
-        alert("Please select a dismissal plan.");
+      if (leaveType === "Early Dismissal" && !dismissalPlan) {
+        alert("Please select or confirm dismissal plan.");
         return;
       }
 
-      ffetch("https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec", {
-  method: "POST",
-  body: JSON.stringify(data),
-  headers: { "Content-Type": "application/json" }
-})
-      .then(res => res.json())
-      .then(response => {
-        if (response.status === 'Success') {
-          alert("Leave request submitted successfully!");
-          document.getElementById('leaveForm').reset();
-          document.getElementById('studentSection').classList.add('hidden');
-        } else {
-          alert("Submission failed. Please try again.");
-        }
-      });
+      const payload = {
+        email: document.getElementById('email').value,
+        studentName: selected.value,
+        studentId: selected.dataset.id,
+        grade: selected.dataset.grade,
+        section: selected.dataset.section,
+        leaveType,
+        fromDate: document.getElementById('fromDate').value,
+        toDate: document.getElementById('toDate').value,
+        reason: document.getElementById('reason').value,
+        dismissalPlan
+      };
+
+      fetch("https://script.google.com/macros/s/AKfycbydNwIgNePZ5LBmfoH5OE9RkaZ_TjZDJcHqeuGUA1sXzAcxVqX8YkWKBrsRViZ6xlBD/exec", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" }
+      })
+        .then(res => res.json())
+        .then(response => {
+          if (response.status === 'Success') {
+            alert("Leave request submitted!");
+            document.getElementById('leaveForm').reset();
+            document.getElementById('studentSection').classList.add('hidden');
+            document.getElementById('dismissalPlanContainer').classList.add('hidden');
+          } else {
+            alert("Error occurred. Please try again.");
+          }
+        });
     });
   </script>
 </body>
