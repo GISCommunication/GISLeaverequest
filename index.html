@@ -107,13 +107,13 @@
       <label>Reason <small>(Please mention dismissal time for Early Dismissal)</small></label>
       <textarea id="reason" required></textarea>
 
-      <!-- Hidden input for lower grades -->
+      <!-- Hidden input for PK-G5 -->
       <input type="hidden" id="dismissalOptionHidden" name="dismissalPlan">
 
-      <!-- Dropdown for upper grades -->
+      <!-- Dropdown for G6–12 only -->
       <div id="dismissalPlanContainer" class="hidden">
         <label>Dismissal Plan</label>
-        <select id="dismissalOptionSelect">
+        <select id="dismissalOptionSelect" disabled>
           <option value="">Select an option</option>
           <option value="Parent/Guardian will pick up the student from school">Parent/Guardian will pick up the student from school</option>
           <option value="Student will leave on their own after early dismissal">Student will leave on their own after early dismissal</option>
@@ -181,15 +181,18 @@
           alert("Parents must collect student from school.");
           hiddenInput.value = "Parent/Guardian will pick up the student from school";
           container.classList.add('hidden');
+          selectBox.disabled = true;
         } else {
           hiddenInput.value = "";
           selectBox.value = "";
           container.classList.remove('hidden');
+          selectBox.disabled = false;
         }
       } else {
         hiddenInput.value = "";
         selectBox.value = "";
         container.classList.add('hidden');
+        selectBox.disabled = true;
       }
     }
 
@@ -199,8 +202,9 @@
       const studentDropdown = document.getElementById('studentName');
       const selected = studentDropdown.selectedOptions[0];
 
-      const dismissalPlan = document.getElementById('dismissalOptionHidden').value 
-                         || document.getElementById('dismissalOptionSelect').value;
+      const dismissalHidden = document.getElementById('dismissalOptionHidden').value;
+      const dismissalSelect = document.getElementById('dismissalOptionSelect').value;
+      const dismissalPlan = dismissalHidden || dismissalSelect;
       const leaveType = document.getElementById('leaveType').value;
 
       if (leaveType === "Early Dismissal" && !dismissalPlan) {
