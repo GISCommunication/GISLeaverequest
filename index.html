@@ -191,14 +191,20 @@
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" }
       })
-      .then(res => res.json())
-      .then(response => {
-        if (response.status === "Success") {
-          alert("Request submitted successfully!");
-          window.location.reload();
-        } else {
-          alert("Failed to submit request.");
-          console.error("Response returned:", response);
+      .then(async res => {
+        const text = await res.text();
+        try {
+          const response = JSON.parse(text);
+          if (response.status === "Success") {
+            alert("Leave request submitted successfully!");
+            window.location.reload();
+          } else {
+            alert("Failed to submit request.");
+            console.error("Returned response:", response);
+          }
+        } catch (e) {
+          alert("Unexpected response from server.");
+          console.error("Raw response:", text);
         }
       })
       .catch(err => {
